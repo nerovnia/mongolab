@@ -1,0 +1,2 @@
+# mongolab
+Examples of quires
