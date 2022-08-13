@@ -1,0 +1,34 @@
+use('aggregations');
+db.movies.aggregate([
+  {
+  $match: {
+    awards:{ $ne: undefined },
+    "imdb.rating": {$gt: -Infinity}
+  },
+},
+{
+  $project: {
+    has_win: {
+      $or: [
+        {$in: ["wins.", {$split:["$awards", " "]}]},
+        {$in: ["win.", {$split:["$awards", " "]}]}
+      ]
+    }, "imdb.rating": 1, awards: 1, _id: 0
+  }
+},
+{
+  $match: {
+    has_win: {$eq: true}
+  }
+},
+{
+  $group: {
+    _id: null,
+    highest_rating: {$max: "$imdb.rating"},
+    lowest_rating: {$min: "$imdb.rating"},
+    average_rating:{$avg: "$imdb.rating"},
+    deviation:{$stdDevSamp: "$imdb.rating"},
+    has_win: 1, awards: 1, _id: 0
+  }
+}
+]).itcount()

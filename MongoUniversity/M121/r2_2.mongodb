@@ -1,0 +1,38 @@
+use('aggregations');
+
+db.movies.aggregate([{
+        $match: {
+            languages: ["English"],
+            "imdb.rating": {
+                $gte: 1
+            }
+        }
+    },
+{
+        $addFields: {
+            release_year: {
+                $dateToParts: {
+                    date: "$released"
+                }
+            }
+        }
+    },
+    {
+        $match: {
+            "release_year.year": {
+                $gte: 1990
+            }
+        }
+    },
+    {
+        $sort: {
+            //"imdb.votes": -1
+            "release_year.year": 1
+        }
+    },{
+        $project: {
+            languages: 1,
+            "release_year.year": 1
+        }
+    }
+]).pretty()

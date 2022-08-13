@@ -1,0 +1,39 @@
+/*
+ all 22766
+ 4058
+*/
+// MongoDB Playground
+// Use Ctrl+Space inside a snippet or a string literal to trigger completions.
+
+// The current database to use.
+use('aggregations');
+
+// Search for documents in the current collection.
+db.movies.aggregate([
+  {
+  $match: {
+    awards:{ $ne: undefined },
+  },
+},
+{
+  $project: {
+    has_win: {
+      $or: [
+        {$in: ["wins.", {$split:["$awards", " "]}]},
+        {$in: ["win.", {$split:["$awards", " "]}]}
+      ]
+    }, awards: 1, _id: 0
+  }
+},
+{
+  $match: {
+    has_win: {$eq: true}
+  }
+},
+{
+  $project: {
+    has_win: 1, awards: 1, _id: 0
+  }
+}
+])
+.itcount()

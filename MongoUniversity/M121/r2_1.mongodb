@@ -1,0 +1,134 @@
+mongosh "mongodb://cluster0-shard-00-00-jxeqq.mongodb.net:27017,cluster0-shard-00-01-jxeqq.mongodb.net:27017,cluster0-shard-00-02-jxeqq.mongodb.net:27017/aggregations?replicaSet=Cluster0-shard-0" --authenticationDatabase admin --tls -u m121 -p aggregations
+
+
+
+pipeline = 
+db.movies.aggregate({$match: {$and: 
+  [{"imdb.rating": {$gte: 7}},
+  {$or: [{"rated": "PG"}, {"rated": "G"}]}
+  ]}}).{imdb:1, genres:1, rated:1, languages:1, _id:0}.pretty()
+
+
+pipeline = db.movies.aggregate(
+  {
+    $match: 
+    {
+      $and:    
+        [
+          {"imdb.rating": {$gte: 7}},
+          {"genres": {$nin: ["Crime","Horror"]}},
+          {"languages": {$all: ["English", "Japanese"]}},
+          {$or: [{"rated": "PG"}, {"rated": "G"}]}   
+        ]
+    }
+  },
+  {"$project": 
+    {imdb:1, genres:1, rated:1, languages:1, _id:0}
+  },{$count: "pass_count"})
+
+db.movies.aggregate(pipeline).itcount()
+
+
+
+pipeline = db.movies.aggregate(
+  {
+    $match: 
+    {
+      $and:    
+        [
+          {"imdb.rating": {$gte: 7}},
+          {"genres": {$nin: ["Crime","Horror"]}},
+          {"languages": {$all: ["English", "Japanese"]}},
+          {$or: [{"rated": "PG"}, {"rated": "G"}]}   
+        ]
+    }
+  }
+)
+
+pipeline = [
+  {
+    $match: 
+    {
+      $and:    
+        [
+          {"imdb.rating": {$gte: 7}},
+          {"genres": {$nin: ["Crime","Horror"]}},
+          {"languages": {$all: ["English", "Japanese"]}},
+          {$or: [{"rated": "PG"}, {"rated": "G"}]}   
+        ]
+    }
+  },
+  {$project: {
+    title:1, rated:1, _id:0
+  }}
+]
+
+  db.movies.aggregate(
+    [
+      {
+        $project: {
+          numberWords: { $size: {$split: ["$title", " "]}}
+        }
+      }, {
+        $match: {
+          numberWords: { $eq: 1 }
+        }
+      }
+    ]
+  ).itcount()
+
+
+
+      title_size: { $size: "$film_name"}
+
+db.movies.aggregate([
+  {
+    $match: {
+      "tomatoes.viewer.rating": {$gte: 3},
+      countries: "USA"
+    }
+  },
+  {
+    $addFields: {
+      num_favs: {
+        $size: {
+          $ifNull: [{
+            $filter: {
+               input: "$cast",
+               as: "mycast",
+               cond: { $or: [
+                  { $eq: [ "$$mycast", "Sandra Bullock" ] },
+                  { $eq: [ "$$mycast", "Tom Hanks" ] },
+                  { $eq: [ "$$mycast", "Julia Roberts" ] },
+                  { $eq: [ "$$mycast", "Kevin Spacey" ] },
+                  { $eq: [ "$$mycast", "George Clooney" ] }
+                ] 
+              }
+            }} ,[]
+          ]
+        }
+      }
+    }
+  },
+  {
+    $match: {
+      num_favs: { $gt: 0 }
+    }
+  }, 
+  {
+    $sort: {
+      num_favs: -1, "tomatoes.viewer.rating": -1, title: -1
+    }
+  },
+  {
+    $project: {
+      num_favs: 1, "tomatoes.viewer.rating": 1, title: 1, countries: 1
+    }
+  },
+  {
+    $skip: 24
+  },
+  {
+    $limit: 1
+  }
+],{allowDiskUse: true}).pretty()
